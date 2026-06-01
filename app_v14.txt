@@ -1,0 +1,73 @@
+import gradio as gr
+import numpy as np
+import soundfile as sf
+from supertonic import TTS
+
+print("Đang khởi động AI Đa Giọng, vui lòng đợi...")
+tts = TTS()
+
+def doc_nhieu_giong(doan1, giong1, doan2, giong2, doan3, giong3, ngon_ngu):
+    cac_doan_am_thanh = []
+    
+    # Hàm xử lý từng đoạn
+    def tao_am_thanh(van_ban, ten_giong):
+        if van_ban and van_ban.strip():
+            style = tts.get_voice_style(voice_name=ten_giong)
+            # Tạo âm thanh, trả về mảng wav
+            wav, _ = tts.synthesize(van_ban, voice_style=style, lang=ngon_ngu)
+            return wav
+        return None
+
+    # Tạo âm thanh cho đoạn 1
+    wav1 = tao_am_thanh(doan1, giong1)
+    if wav1 is not None: cac_doan_am_thanh.append(wav1)
+        
+    # Tạo âm thanh cho đoạn 2
+    wav2 = tao_am_thanh(doan2, giong2)
+    if wav2 is not None: cac_doan_am_thanh.append(wav2)
+        
+    # Tạo âm thanh cho đoạn 3
+    wav3 = tao_am_thanh(doan3, giong3)
+    if wav3 is not None: cac_doan_am_thanh.append(wav3)
+        
+    if not cac_doan_am_thanh:
+        return None
+        
+    # Nối tất cả các đoạn âm thanh lại với nhau (Giả sử sample rate mặc định của Supertonic là 24000)
+    am_thanh_cuoi_cung = np.concatenate(cac_doan_am_thanh)
+    
+    # Lưu file
+    duong_dan_luu = "hoi_thoai_hoan_chinh.wav"
+    sf.write(duong_dan_luu, am_thanh_cuoi_cung, 24000)
+    
+    return duong_dan_luu
+
+# Giao diện người dùng
+with gr.Blocks(title="🎙️ Studio Đa Giọng Supertonic") as giao_dien:
+    gr.Markdown("## 🎙️ Ứng Dụng Đọc Hội Thoại Đa Giọng")
+    gr.Markdown("Nhập nội dung vào các ô bên dưới và chọn giọng tương ứng. Hệ thống sẽ đọc lần lượt và nối thành 1 file âm thanh hoàn chỉnh.")
+    
+    ngon_ngu_chung = gr.Dropdown(choices=["vi", "en", "ja", "ko"], value="vi", label="🌍 Chọn ngôn ngữ chung")
+    
+    with gr.Row():
+        doan_1 = gr.Textbox(lines=3, label="Đoạn văn bản 1")
+        giong_1 = gr.Dropdown(choices=["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"], value="M1", label="🗣️ Giọng đoạn 1")
+        
+    with gr.Row():
+        doan_2 = gr.Textbox(lines=3, label="Đoạn văn bản 2")
+        giong_2 = gr.Dropdown(choices=["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"], value="F1", label="🗣️ Giọng đoạn 2")
+        
+    with gr.Row():
+        doan_3 = gr.Textbox(lines=3, label="Đoạn văn bản 3")
+        giong_3 = gr.Dropdown(choices=["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"], value="M2", label="🗣️ Giọng đoạn 3")
+        
+    nut_chay = gr.Button("🚀 Tạo Audio Hội Thoại", variant="primary")
+    ket_qua = gr.Audio(type="filepath", label="🎧 Nghe và tải xuống Audio Hoàn Chỉnh")
+    
+    nut_chay.click(
+        fn=doc_nhieu_giong, 
+        inputs=[doan_1, giong_1, doan_2, giong_2, doan_3, giong_3, ngon_ngu_chung], 
+        outputs=ket_qua
+    )
+
+giao_dien.launch(inbrowser=True)

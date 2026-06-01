@@ -1,55 +1,145 @@
-# Super-Studio-V56---Auto-Video-Subtitle-Generator-TTS-fre-Auto-Reup
+# TTS ONNX Inference Examples
 
-# 🎬 Super Studio V56 - Auto Video & Subtitle Generator
+This guide provides examples for running TTS inference using `example_onnx.py`.
 
-![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+## 📰 Update News
 
-**Super Studio V56** is an all-in-one, fully automated video processing tool designed to streamline content creation for platforms like YouTube Shorts, TikTok, and Facebook Reels. 
+**2026.04.29** - 🎉 **Supertonic 3** released with 31-language support, improved reading accuracy, and v2-compatible public ONNX assets. [Demo](https://huggingface.co/spaces/Supertone/supertonic-3) | [Models](https://huggingface.co/Supertone/supertonic-3)
 
-With a single click, this tool uses AI to transcribe audio, accurately detect speaker genders, translate subtitles, generate high-quality Text-to-Speech (TTS), and automatically sync everything to your original video perfectly.
+**2025.12.10** - Added `supertonic` PyPI package! Install via `pip install supertonic` for a streamlined experience. This is a separate usage method from the ONNX examples in this directory. For more details, visit [supertonic-py documentation](https://supertone-inc.github.io/supertonic-py) and see `example_pypi.py` for usage.
 
----
+**2025.12.10** - Added [6 new voice styles](https://huggingface.co/Supertone/supertonic/tree/b10dbaf18b316159be75b34d24f740008fddd381) (M3, M4, M5, F3, F4, F5). See [Voices](https://supertone-inc.github.io/supertonic-py/voices/) for details
 
-## ✨ Key Features
+**2025.12.08** - Optimized ONNX models via [OnnxSlim](https://github.com/inisis/OnnxSlim) now available on [Hugging Face Models](https://huggingface.co/Supertone/supertonic)
 
-*   **🤖 Smart AI Translation:** Supports integration with Gemini, ChatGPT, Claude, and DeepSeek for context-aware translations.
-*   **🎙️ Precise Gender Detection:** Automatically analyzes audio pitch to assign male or female voices to the correct speaker without manual tagging.
-*   **⏱️ Perfect Audio Sync (Time-Stretch):** Automatically adjusts TTS speed to ensure the generated audio fits perfectly within the original video's timeframe.
-*   **📱 Multi-Platform Aspect Ratios:** Auto-crop your videos to 9:16 (TikTok/Shorts), 1:1 (Square), or 16:9 with center-focus.
-*   **🛡️ Anti-Reup Filters:** Built-in video flipping and color adjustment features to avoid copyright detection.
-*   **🌍 Bilingual UI:** The user interface supports both English and Vietnamese for seamless operation.
-*   **📊 Real-time Progress Tracking:** Watch the progress bar update smoothly from 0% to 100% directly on the UI.
+**2025.11.23** - Enhanced text preprocessing with comprehensive normalization, emoji removal, symbol replacement, and punctuation handling for improved synthesis quality.
 
----
+**2025.11.19** - Added `--speed` parameter to control speech synthesis speed. Adjust the speed factor to make speech faster or slower while maintaining natural quality.
 
-## 🚀 Installation
+**2025.11.19** - Added automatic text chunking for long-form inference. Long texts are split into chunks and synthesized with natural pauses.
 
-### 1. Prerequisites
-Make sure you have [Python 3.12 or higher](https://www.python.org/downloads/) installed. You will also need `FFmpeg` installed and added to your system's PATH.
+## Installation
 
-### 2. Clone the Repository
+This project uses [uv](https://docs.astral.sh/uv/) for fast package management.
+
+### Install uv (if not already installed)
 ```bash
-git clone [https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git)
-cd YOUR_REPOSITORY_NAME3. Install Dependencies
-Bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Install dependencies
+```bash
+uv sync
+```
+
+Or if you prefer using traditional pip with requirements.txt:
+```bash
 pip install -r requirements.txt
-(Make sure to include packages like gradio, numpy, soundfile, edge_tts, librosa, whisper, deep_translator, etc., in your requirements.txt)
+```
 
-💻 Usage
-Run the following command in your terminal to start the application:
+## Basic Usage
 
-Bash
-python app.py
-Once the script is running, open your web browser and navigate to the local URL provided in the terminal (usually http://127.0.0.1:7860).
+### Example 1: Default Inference
+Run inference with default settings:
+```bash
+uv run example_onnx.py
+```
 
-🔑 API Key Setup
-To use the advanced AI Directors (Gemini, OpenAI, Claude, DeepSeek), you will need to input your API keys directly into the UI under the Translation Engine section.
+This will use:
+- Voice style: `../assets/voice_styles/M1.json`
+- Text: "This morning, I took a walk in the park, and the sound of the birds and the breeze was so pleasant that I stopped for a long time just to listen."
+- Output directory: `results/`
+- Total steps: 8
+- Number of generations: 4
 
-🛠️ Workflows
-1-Click Auto Video: Upload your raw video, select your preferred voices, set the aspect ratio (e.g., 9:16 for TikTok), and click run. The tool handles extraction, translation, TTS, mixing, and rendering automatically.
+### Example 2: Batch Inference
+Process multiple voice styles and texts at once:
+```bash
+uv run example_onnx.py \
+  --voice-style ../assets/voice_styles/M1.json ../assets/voice_styles/F1.json \
+  --text "The sun sets behind the mountains, painting the sky in shades of pink and orange." "오늘 아침에 공원을 산책했는데, 새소리와 바람 소리가 너무 좋아서 한참을 멈춰 서서 들었어요." \
+  --lang en ko \
+  --batch
+```
 
-Manual Extraction: Extract .srt files using Whisper AI and manually translate them using Google Translate.
+This will:
+- Use `--batch` flag to enable batch processing mode
+- Generate speech for 2 different voice-text pairs
+- Use male voice style (M1.json) for the first English text
+- Use female voice style (F1.json) for the second Korean text
+- Process both samples in a single batch (automatic text chunking disabled)
 
-Voice Management: Add custom cloned voices (.wav or .mp3) to the voices/ folder for personalized TTS output.
+### Example 3: High Quality Inference
+Increase denoising steps for better quality:
+```bash
+uv run example_onnx.py \
+  --total-step 10 \
+  --voice-style ../assets/voice_styles/M1.json \
+  --text "Increasing the number of denoising steps improves the output's fidelity and overall quality."
+```
+
+This will:
+- Use 10 denoising steps instead of the default 8
+- Produce higher quality output at the cost of slower inference
+
+### Example 4: Long-Form Inference
+For long texts, the system automatically chunks the text into manageable segments and generates a single audio file:
+```bash
+uv run example_onnx.py \
+  --voice-style ../assets/voice_styles/M1.json \
+  --text "Once upon a time, in a small village nestled between rolling hills, there lived a young artist named Clara. Every morning, she would wake up before dawn to capture the first light of day. The golden rays streaming through her window inspired countless paintings. Her work was known throughout the region for its vibrant colors and emotional depth. People from far and wide came to see her gallery, and many said her paintings could tell stories that words never could."
+```
+
+This will:
+- Automatically split the long text into smaller chunks (max 300 characters by default)
+- Process each chunk separately while maintaining natural speech flow
+- Insert brief silences (0.3 seconds) between chunks for natural pacing
+- Combine all chunks into a single output audio file
+
+**Note**: When using batch mode (`--batch`), automatic text chunking is disabled. Use non-batch mode for long-form text synthesis.
+
+### Example 5: Adjusting Speech Speed
+Control the speed of speech synthesis:
+```bash
+# Faster speech (speed > 1.0)
+uv run example_onnx.py \
+  --voice-style ../assets/voice_styles/F2.json \
+  --text "This text will be synthesized at a faster pace." \
+  --speed 1.2
+
+# Slower speech (speed < 1.0)
+uv run example_onnx.py \
+  --voice-style ../assets/voice_styles/M2.json \
+  --text "This text will be synthesized at a slower, more deliberate pace." \
+  --speed 0.9
+```
+
+This will:
+- Use `--speed 1.2` to generate faster speech
+- Use `--speed 0.9` to generate slower speech
+- Default speed is 1.05 if not specified
+- Recommended speed range is between 0.9 and 1.5 for natural-sounding results
+
+## Available Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--use-gpu` | flag | False | Use GPU for inference (with CPU fallback) |
+| `--onnx-dir` | str | `../assets/onnx` | Path to ONNX model directory |
+| `--total-step` | int | 8 | Number of denoising steps (higher = better quality, slower) |
+| `--speed` | float | 1.05 | Speech speed factor (higher = faster, lower = slower) |
+| `--n-test` | int | 4 | Number of times to generate each sample |
+| `--voice-style` | str+ | `../assets/voice_styles/M1.json` | Voice style file path(s) |
+| `--text` | str+ | (long default text) | Text(s) to synthesize |
+| `--lang` | str+ | `en` | Language(s) for text(s); see the main README for all 31 codes |
+| `--save-dir` | str | `results` | Output directory |
+| `--batch` | flag | False | Enable batch mode (disables automatic text chunking) |
+
+## Notes
+
+- **Batch Processing**: The number of `--voice-style` files must match the number of `--text` entries
+- **Multilingual Support**: Use `--lang` to specify language(s). Available: 31 languages; see the main README for the full list
+- **Long-Form Inference**: Without `--batch` flag, long texts are automatically chunked and combined into a single audio file with natural pauses
+- **Quality vs Speed**: Higher `--total-step` values produce better quality but take longer
+- **GPU Support**: GPU mode is not supported yet
+
