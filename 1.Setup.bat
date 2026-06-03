@@ -11,6 +11,9 @@ echo.
 echo [1/3] Dang kiem tra va cap nhat PIP...
 python -m pip install --upgrade pip
 
+echo. [1.5/3] cài đặt ffmpeg
+winget install ffmpeg
+
 echo.
 echo [2/3] Dang tai va cai dat cac Module co ban (Gradio, TTS, Xu ly anh/am thanh)...
 pip install gradio numpy soundfile edge-tts requests librosa deep-translator Pillow
